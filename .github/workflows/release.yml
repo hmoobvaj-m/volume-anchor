@@ -1,6 +1,6 @@
 
-# UNSIGNED internal evaluation builds only.
-# Production signing and provenance will be added later.
+# Unsigned evaluation builds only.
+# Production releases require signing and provenance.
 
 name: Release candidate (manual, unsigned)
 
@@ -27,6 +27,7 @@ jobs:
           if (!(Test-Path 'VolumeAnchor.slnx')) {
             throw 'VolumeAnchor.slnx does not exist.'
           }
+
           if (!(Test-Path 'src/VolumeAnchor.Agent/VolumeAnchor.Agent.csproj')) {
             throw 'The executable agent project does not exist.'
           }
@@ -60,20 +61,26 @@ jobs:
       - name: Create archive and checksum
         shell: pwsh
         run: |
+          $publishDir = Join-Path $env:RUNNER_TEMP 'volume-anchor-publish'
           $archive = Join-Path $env:RUNNER_TEMP 'volume-anchor-win-x64-UNSIGNED.zip'
           $checksumFile = Join-Path $env:RUNNER_TEMP 'volume-anchor-win-x64-UNSIGNED.sha256'
 
-          Compress-Archive `
-            -Path "$env:RUNNER_TEMP/volume-anchor-publish/*" `
-            -DestinationPath $archive `
-            -Force
+          if (!(Test-Path -LiteralPath $publishDir -PathType Container)) {
+            throw 'Publish output directory does not exist.'
+          }
+
+          if (!(Get-ChildItem -LiteralPath $publishDir -File | Select-Object -First 1)) {
+            throw 'Publish output directory contains no files.'
+          }
+
+          Compress-Archive -Path "$publishDir/*" -DestinationPath $archive -Force
 
           $digest = (Get-FileHash -Path $archive -Algorithm SHA256).Hash.ToLowerInvariant()
 
           "$digest  volume-anchor-win-x64-UNSIGNED.zip" |
             Set-Content -Path $checksumFile -Encoding ascii
 
-      - name: Upload internal evaluation files
+      - name: Upload evaluation artifacts
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: volume-anchor-win-x64-UNSIGNED
