@@ -1,0 +1,20 @@
+
+# VolumeAnchor Code Ownership
+
+# Default repository ownership
+* @hmoobvaj-m
+
+# GitHub Actions and repository security configuration
+/.github/ @hmoobvaj-m
+
+# Security documentation
+/SECURITY.md @hmoobvaj-m
+/docs/security/ @hmoobvaj-m
+
+# Application architecture and security boundaries
+/docs/architecture/ @hmoobvaj-m
+
+# Build configuration and dependency management
+/Directory.Build.props @hmoobvaj-m
+/Directory.Packages.props @hmoobvaj-m
+/global.json @hmoobvaj-m

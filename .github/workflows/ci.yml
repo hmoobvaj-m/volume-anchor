@@ -1,0 +1,147 @@
+
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: ci-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    repository-policy:
+        name: Repository policy
+        runs-on: ubuntu-24.04
+        steps:
+            - name: Check out source
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Install verified actionlint
+              shell: bash
+              run: |
+                  set -euo pipefail
+
+                  version="1.7.12"
+                  archive="actionlint_${version}_linux_amd64.tar.gz"
+                  checksum="8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
+
+                  curl --fail --location --silent --show-error \
+                    "https://github.com/rhysd/actionlint/releases/download/v${version}/${archive}" \
+                    --output "$RUNNER_TEMP/$archive"
+
+                  printf '%s  %s\n' "$checksum" "$RUNNER_TEMP/$archive" | sha256sum --check
+                  tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP" actionlint
+
+            - name: Validate GitHub Actions workflows
+              shell: bash
+              run: "$RUNNER_TEMP/actionlint"
+
+            - name: Validate security configuration and action pinning
+              shell: bash
+              run: |
+                  set -euo pipefail
+                  python3 - <<'PYTHON'
+                  import pathlib
+                  import re
+                  import sys
+
+                  required = [
+                      '.github/workflows/ci.yml',
+                      '.github/workflows/security.yml',
+                      '.github/workflows/release.yml',
+                      '.github/dependabot.yml',
+                      '.github/CODEOWNERS',
+                  ]
+                  missing = [
+                      name for name in required
+                      if not pathlib.Path(name).is_file()
+                  ]
+                  failures = [
+                      f'Missing required file: {name}'
+                      for name in missing
+                  ]
+
+                  for file in pathlib.Path('.github/workflows').glob('*.yml'):
+                      for line_no, line in enumerate(
+                          file.read_text().splitlines(), start=1
+                      ):
+                          match = re.match(
+                              r'^\s*-?\s*uses:\s*([^\s#]+)',
+                              line
+                          )
+                          if not match:
+                              continue
+
+                          ref = match.group(1)
+                          if ref.startswith('./'):
+                              continue
+
+                          pattern = (
+                              r'[\w.-]+/[\w.-]+'
+                              r'(?:/[\w./-]+)?@[0-9a-f]{40}'
+                          )
+                          if not re.fullmatch(pattern, ref):
+                              failures.append(
+                                  f'{file}:{line_no}: '
+                                  f'action not pinned to full SHA: {ref}'
+                              )
+
+                  if failures:
+                      print('\n'.join(failures), file=sys.stderr)
+                      sys.exit(1)
+
+                  print('Repository policy checks passed.')
+                  PYTHON
+
+    dotnet:
+        name: Windows .NET build and tests
+        runs-on: windows-2025
+        steps:
+            - name: Check out source
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Verify solution configuration
+              shell: pwsh
+              run: |
+                  $projects = @(Get-ChildItem -Path src, tests -Filter '*.csproj' -File -Recurse -ErrorAction SilentlyContinue)
+
+                  if ($projects.Count -gt 0 -and !(Test-Path 'VolumeAnchor.slnx')) {
+                      throw 'C# projects exist, but VolumeAnchor.slnx is missing.'
+                  }
+
+            # Activate once the C# solution is created.
+            - name: Set up .NET 10
+              if: ${{ hashFiles('VolumeAnchor.slnx') != '' }}
+              uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+              with:
+                  dotnet-version: "10.0.x"
+
+            - name: Restore locked dependencies
+              if: ${{ hashFiles('VolumeAnchor.slnx') != '' }}
+              run: dotnet restore VolumeAnchor.slnx --locked-mode
+
+            - name: Build with warnings as errors
+              if: ${{ hashFiles('VolumeAnchor.slnx') != '' }}
+              run: dotnet build VolumeAnchor.slnx --configuration Release --no-restore --warnaserror
+
+            - name: Run tests
+              if: ${{ hashFiles('VolumeAnchor.slnx') != '' }}
+              run: dotnet test VolumeAnchor.slnx --configuration Release --no-build --no-restore
+
+            - name: Report bootstrap state
+              if: ${{ hashFiles('VolumeAnchor.slnx') == '' }}
+              shell: pwsh
+              run: |
+                  Write-Host 'No VolumeAnchor.slnx exists yet.'
+                  Write-Host '.NET checks activate once the solution is added.'
