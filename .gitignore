@@ -1,0 +1,17 @@
+# .NET build outputs
+**/bin/
+**/obj/
+**/TestResults/
+
+# IDE and local settings
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
