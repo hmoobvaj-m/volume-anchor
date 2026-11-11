@@ -2,4 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/VolumeAnchor.Core/VolumeAnchor.Core.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/VolumeAnchor.UnitTests/VolumeAnchor.UnitTests.csproj" />
+  </Folder>
 </Solution>

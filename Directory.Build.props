@@ -1,19 +1,14 @@
 
 <Project>
     <PropertyGroup>
-        <!-- lang and compiler config -->
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <Deterministic>true</Deterministic>
         <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-
-        <!-- Static code analysis -->
         <EnableNETAnalyzers>true</EnableNETAnalyzers>
         <AnalysisLevel>10.0</AnalysisLevel>
         <AnalysisMode>Recommended</AnalysisMode>
         <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-
-        <!-- Dependency security -->
         <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
         <NuGetAudit>true</NuGetAudit>
         <NuGetAuditMode>all</NuGetAuditMode>

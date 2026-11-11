@@ -1,44 +1,31 @@
-
-# VolumeAnchor EditorConfig
-# Consistent formatting across editors and development environments.
-
 root = true
 
-# General formatting
 [*]
 charset = utf-8
 end_of_line = lf
-insert_final_newline = true
+insert_final_newline = false
 trim_trailing_whitespace = true
 
-# C# formatting
 [*.cs]
 indent_style = space
 indent_size = 4
 tab_width = 4
 
-# Preserve compact single-line conditional statements.
 csharp_prefer_braces = when_multiline
 csharp_preserve_single_line_statements = true
 
-# Expand code blocks for readability.
-csharp_preserve_single_line_blocks = false
+csharp_preserve_single_line_blocks = true
 csharp_new_line_before_open_brace = all
 
-# Indentation
 csharp_indent_block_contents = true
 csharp_indent_braces = false
 csharp_indent_case_contents = true
 csharp_indent_switch_labels = true
 
-# Spacing
 csharp_space_after_keywords_in_control_flow_statements = true
 csharp_space_between_method_declaration_parameter_list_parentheses = false
 csharp_space_between_method_call_parameter_list_parentheses = false
 
-# Import organization
 dotnet_sort_system_directives_first = true
-
-# Analyzer enforcement
 dotnet_diagnostic.IDE0011.severity = warning
 dotnet_diagnostic.IDE0055.severity = warning
