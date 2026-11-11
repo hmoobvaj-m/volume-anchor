@@ -1,7 +1,3 @@
-
-# Unsigned evaluation builds only.
-# Production releases require signing and provenance.
-
 name: Release candidate (manual, unsigned)
 
 on:
